@@ -13,7 +13,7 @@ def your_mic_function():
         r = sr.Recognizer()
         with sr.Microphone() as source:
             # r.pause_threshold = 1
-            audio = r.listen(source)
+            audio = r.listen(source
             # write audio to a WAV file
             with open("output_2.wav", "wb") as file:
                 file.write(audio.get_wav_data())
