@@ -20,17 +20,26 @@ def your_mic_function():
 
         things_said += "\n" + stt_google("output_2.wav")
 
+        recent_things_said = things_said[-200:]  # last 200 characters
         print(recent_things_said)
-        recent_things_said = things_said[-100:]  # last 100 characters
 
+        print("one")
         assistant = AudioAssistant()
-        cut_in = assistant.run("Should I cut into conversation here? Please say YES! or NO. only. "
+        print("two")
+
+        cut_in = assistant.run("Should I cut into conversation here? cut "
+                               "in if people ask questions or are stuck Please say YES! or NO. only. "
                                "Conversation below:\n" + recent_things_said)
 
         print(cut_in)
 
-        # if cut_in[0] == "YES!":
-        #     print("made it")
+        # check if cut_in[0] exists and then if it is "YES!"
+        if cut_in and cut_in[0] == "YES!":
+            print("three")
+            assistant = AudioAssistant()
+            out = assistant.run("Participate in conversation:\n" + recent_things_said, play_output=True)
+            print("four")
+            print(out)
 
 
 your_mic_function()
