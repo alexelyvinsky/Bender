@@ -28,7 +28,7 @@ def your_mic_function():
         print("two")
 
         cut_in = assistant.run("Should I cut into conversation here? cut "
-                               "in if people ask questions or are stuck Please say YES! or NO. only. "
+                               "in if people ask questions or are stuck. Please say YES! or NO. only. "
                                "Conversation below:\n" + recent_things_said)
 
         print(cut_in)
