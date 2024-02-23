@@ -80,9 +80,9 @@ class AudioAssistant:
                 stream.close()
                 audio.terminate()
 
-    def print_w_stream(self, message, play_output=False):
+    def print_w_stream(self, message):
         completion = self.client.chat.completions.create(
-            model='gpt-3.5-turbo',
+            model='gpt-3.5-turbo-0125',
             messages=[
                 {"role": "system", "content": "You are a member of a discussion about opening a local bakery"},
                 {"role": "user", "content": message},
@@ -105,9 +105,10 @@ class AudioAssistant:
                         sentence = sentence.strip()
                         if sentence and sentence not in sentences:
                             sentences.append(sentence)
-                            if play_output:
-                                self.audio_generation_queue.put(sentence)
-                            # print(f"Queued sentence: {sentence}")
+                            if "YES!" in sentences[0]:
+                                if "YES!" not in sentence:
+                                    print(f"Queued sentence: {sentence}")
+                                    self.audio_generation_queue.put(sentence)
                         sentence = ''
         return sentences
 
@@ -117,9 +118,9 @@ class AudioAssistant:
         self.audio_playback_queue.join()
         self.audio_playback_queue.put(None)
 
-    def run(self, user_input, play_output=False):
+    def run(self, user_input):
         # start_time = time.time()
-        out = self.print_w_stream(user_input, play_output)
+        out = self.print_w_stream(user_input)
         self.cleanup_queues()
         self.audio_generation_thread.join()
         self.audio_playback_thread.join()
