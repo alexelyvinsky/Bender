@@ -28,16 +28,19 @@ def your_mic_function():
         print("two")
 
         cut_in = assistant.run("Should I cut into conversation here? cut "
-                               "in if people ask questions or are stuck. Please say YES! or NO. only. "
+                               "in if people ask questions or are stuck, but not if it is directed at someone specific."
+                               "Please say YES! or NO, and then explain why "
+                               "you chose that response."
                                "Conversation below:\n" + recent_things_said)
 
         print(cut_in)
 
-        # check if cut_in[0] exists and then if it is "YES!"
-        if cut_in and cut_in[0] == "YES!":
+        if cut_in and "YES!" in cut_in[0]:
             print("three")
             assistant = AudioAssistant()
-            out = assistant.run("Participate in conversation:\n" + recent_things_said, play_output=True)
+            out = assistant.run("Participate in conversation. "
+                                "Make sure your response is less than 3 sentences, "
+                                "you don't want to hog up the conversation:\n" + recent_things_said, play_output=True)
             print("four")
             print(out)
 
