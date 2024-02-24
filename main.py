@@ -1,7 +1,6 @@
 import requests
 import pyaudio
 import time
-import pygame
 import threading
 import queue
 import tempfile
@@ -17,8 +16,6 @@ class AudioAssistant:
         self.client = OpenAI()
         self.audio_generation_queue = queue.Queue()
         self.audio_playback_queue = queue.Queue()
-
-        pygame.mixer.init()
 
         self.audio_generation_thread = threading.Thread(target=self.process_audio_generation_queue)
         self.audio_playback_thread = threading.Thread(target=self.process_audio_playback_queue)
@@ -80,16 +77,16 @@ class AudioAssistant:
                 stream.close()
                 audio.terminate()
 
-    def print_w_stream(self, message):
+    def print_w_stream(self, message, memo):
         completion = self.client.chat.completions.create(
-            model='gpt-3.5-turbo-0125',
+            model='gpt-4-turbo-preview',
             messages=[
-                {"role": "system", "content": "You are a member of a discussion about opening a local bakery"},
+                {"role": "system", "content": memo},
                 {"role": "user", "content": message},
             ],
             stream=True,
             temperature=0,
-            max_tokens=100,
+            max_tokens=1000,
         )
 
         sentences = []
@@ -105,10 +102,10 @@ class AudioAssistant:
                         sentence = sentence.strip()
                         if sentence and sentence not in sentences:
                             sentences.append(sentence)
-                            if "YES!" in sentences[0]:
-                                if "YES!" not in sentence:
-                                    print(f"Queued sentence: {sentence}")
-                                    self.audio_generation_queue.put(sentence)
+                            # if "YES!" in sentences[0]:
+                            #     if "YES!" not in sentence:
+                                    # print(f"Queued sentence: {sentence}")
+                            self.audio_generation_queue.put(sentence)
                         sentence = ''
         return sentences
 
@@ -118,13 +115,12 @@ class AudioAssistant:
         self.audio_playback_queue.join()
         self.audio_playback_queue.put(None)
 
-    def run(self, user_input):
+    def run(self, user_input, memo="You are an assistant."):
         # start_time = time.time()
-        out = self.print_w_stream(user_input)
+        out = self.print_w_stream(user_input, memo)
         self.cleanup_queues()
         self.audio_generation_thread.join()
         self.audio_playback_thread.join()
-        pygame.mixer.quit()
         return out
 
 # if __name__ == "__main__":
