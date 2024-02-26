@@ -1,6 +1,6 @@
 import speech_recognition as sr
-from SpeechToText import stt_google
 from main import AudioAssistant
+import time
 
 # global vars
 things_said = ""
@@ -14,71 +14,56 @@ def read_from_file(file_name):
         return file.read()
 
 
-def your_mic_function(my_mic_work_memo):
-    global things_said, recent_things_said, \
-        previous_things_said, everything_said
-    while True:
-        print("listening")
-        r = sr.Recognizer()
-        with sr.Microphone() as source:
-            # r.pause_threshold = 1
+def callback(recognizer, audio):  # this is called from the background thread
+    try:
+        global things_said, recent_things_said, \
+            previous_things_said, everything_said, my_work_memo
 
-            # make the cutoff more aggressive, meaning as soon as someone stops talking end the recording
-            # r.energy_threshold = 4000
-            # r.dynamic_energy_threshold = False
-            # r.pause_threshold = 0.5
-            # r.adjust_for_ambient_noise(source, duration=1)
+        try:
+            # temp_things = stt_google(audio_data)  # Process the audio chunk directly
+            temp_things = r.recognize_google(audio)
 
-            audio = r.listen(source)
-            # write audio to a WAV file
-            with open("output_2.wav", "wb") as file:
-                file.write(audio.get_wav_data())
+            things_said += "\n" + temp_things
+            everything_said += "\n" + temp_things
 
-        temp_things = stt_google("output_2.wav")
+            # recent_things_said = things_said[-10000:]  # last 200 characters
 
-        things_said += "\n" + temp_things
-        everything_said += "\n" + temp_things
+            # this involves both users and assistant speech
+            recent_things_said = everything_said[-10000:]  # last 200 characters
+            # print(recent_things_said)
+            print(temp_things)
 
-        # recent_things_said = things_said[-10000:]  # last 200 characters
+            if not previous_things_said == things_said and 'Lens' in temp_things or 'lens' in temp_things:
+                assistant = AudioAssistant()
 
-        # this involves both users and assistant speech
-        recent_things_said = everything_said[-10000:]  # last 200 characters
-        # print(recent_things_said)
-        print(temp_things)
+                cut_in = assistant.run("You are an active participant in this meeting. "
+                                       "Please provide your thoughts/insights based on the memo "
+                                       "and the recent things said in the meeting. Keep your responses brief, "
+                                       "less than 3 sentences.\n\n"
+                                       "Conversation below:\n\n" + recent_things_said, my_work_memo)
 
-        if not previous_things_said == things_said and 'Lens' in temp_things or 'lens' in temp_things:
-            assistant = AudioAssistant()
+                print("cut_in: " + str(cut_in))
 
-            # cut_in = assistant.run("Should I cut into conversation here? cut "
-            #                        "in if people ask questions or are stuck, but not if it is directed at someone "
-            #                        "specific. If directed at 'Lenz' or 'Lenzbot', then cut in."
-            #                        "Please say YES! or NO, and then respond. Make sure your response is less "
-            #                        "than 3 sentences, you don't want to hog up the conversation. If you respond NO!, "
-            #                        "respond with one sentence maximum. If the conversation seems too "
-            #                        "similar to the previous thing said, don't respond"
-            #                        "Conversation below:\n\n" + recent_things_said +
-            #                        "\n\nPrevious thing said: " + previous_things_said)
+                previous_things_said = things_said
 
-            cut_in = assistant.run("You are an active participant in this meeting. "
-                                   "Please provide your thoughts/insights based on the memo "
-                                   "and the recent things said in the meeting. Keep your responses brief.\n\n"
-                                   "Conversation below:\n\n" + recent_things_said, my_mic_work_memo)
+                # join cut_in into a string, but eliminate the 0th element
+                cut_in_str = " ".join(cut_in)
 
-            print("cut_in: " + str(cut_in))
+                everything_said += "\n" + cut_in_str
 
-            previous_things_said = things_said
+        except sr.UnknownValueError:
+            print("Audio could not be understood")
+        except sr.RequestError as e:
+            print("Error from STT service; {0}".format(e))
 
-            # join cut_in into a string, but eliminate the 0th element
-            cut_in_str = " ".join(cut_in)
-
-            everything_said += "\n" + cut_in_str
+    except LookupError:
+        print("Oops! Didn't catch that")
 
 
-if __name__ == "__main__":
-    my_work_memo = read_from_file("memo.txt")
-    your_mic_function(my_work_memo)
+my_work_memo = read_from_file("memo.txt")
 
-    # print("stopped listening, now transcribing to text...")
+r = sr.Recognizer()
+print("Listening...")
+r.listen_in_background(sr.Microphone(), callback)
 
-    # call wav to text
-    # print(stt_google("output_2.wav"))
+while True: time.sleep(0.1)  # we're still listening even though the main thread is blocked
