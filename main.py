@@ -8,6 +8,8 @@ import soundfile as sf
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
+import ollama
+# import pyttsx3
 
 
 class AudioAssistant:
@@ -22,6 +24,10 @@ class AudioAssistant:
 
         self.audio_generation_thread.start()
         self.audio_playback_thread.start()
+
+        # self.engine = pyttsx3.init()
+        # self.voices = self.engine.getProperty('voices')
+        # self.engine.setProperty('voice', self.voices[1].id)
 
     def process_audio_generation_queue(self):
         while True:
@@ -109,6 +115,42 @@ class AudioAssistant:
                         sentence = ''
         return sentences
 
+    def print_w_stream_local(self, message, memo):
+        start_time = time.time()
+        completion = ollama.chat(
+            model='mistral',  # llama2
+            messages=[
+                        {"role": "system", "content": memo},
+                        {"role": "user", "content": message},
+                    ],
+            stream=True,
+        )
+        end_time = time.time()
+        latency = end_time - start_time
+        print(f"Time taken: {latency:.3f} seconds")
+
+        sentences = []
+        sentence = ''
+        sentence_end_chars = {'.', '?', '!', '\n'}
+
+        for chunk in completion:
+            content = chunk['message']['content']
+            if content:
+                for char in content:
+                    sentence += char
+                    if char in sentence_end_chars:
+                        sentence = sentence.strip()
+                        if sentence and sentence not in sentences:
+                            sentences.append(sentence)
+                            # if "YES!" in sentences[0]:
+                            #     if "YES!" not in sentence:
+                                    # print(f"Queued sentence: {sentence}")
+                            self.audio_generation_queue.put(sentence)
+                            # self.engine.say(sentence)
+                            # self.engine.runAndWait()
+                        sentence = ''
+        return sentences
+
     def cleanup_queues(self):
         self.audio_generation_queue.join()
         self.audio_generation_queue.put(None)
@@ -117,7 +159,8 @@ class AudioAssistant:
 
     def run(self, user_input, memo="You are an assistant."):
         # start_time = time.time()
-        out = self.print_w_stream(user_input, memo)
+        # out = self.print_w_stream(user_input, memo)
+        out = self.print_w_stream_local(user_input, memo)
         self.cleanup_queues()
         self.audio_generation_thread.join()
         self.audio_playback_thread.join()
