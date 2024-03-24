@@ -46,10 +46,13 @@ def callback():  # this is called from the background thread
         if any(word.lower() in temp_things.lower() for word in ['lenz', 'lens']):
             assistant = AudioAssistant()
 
-            cut_in = assistant.run("You are an active participant in this meeting, your name is Lenz or Lens. "
-                                   "Please provide your thoughts/insights based on the memo "
-                                   "and the recent things said in the meeting. Keep your responses brief, "
-                                   "less than 3 sentences. Do not say your name in your responses\n\n"
+            # Wait for the previous audio to finish playing
+            #assistant.audio_playback_thread.join()
+
+            cut_in = assistant.run("You are a participant in this meeting, your name is Lenz or Lens. "
+                                   "It is vital that you keep your responses relevant to the conversation and the memo"
+                                   "speak as concisely as possible. Seriously, keep your responses to a minimum"
+                                   "Do not say your name in your responses\n\n"
                                    "Conversation below:\n\n" + recent_things_said, my_work_memo)
 
             # print("cut_in: " + str(cut_in))

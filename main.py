@@ -10,6 +10,7 @@ from openai import OpenAI
 import os
 import ollama
 # import pyttsx3
+import keyboard
 
 
 class AudioAssistant:
@@ -24,6 +25,7 @@ class AudioAssistant:
 
         self.audio_generation_thread.start()
         self.audio_playback_thread.start()
+        #self.is_speaking = False
 
         # self.engine = pyttsx3.init()
         # self.voices = self.engine.getProperty('voices')
@@ -70,20 +72,30 @@ class AudioAssistant:
     def play_audio(self, audio_file_path):
         if audio_file_path:
             with sf.SoundFile(audio_file_path, 'r') as sound_file:
-                audio = pyaudio.PyAudio()
-                stream = audio.open(format=pyaudio.paInt16, channels=sound_file.channels, rate=sound_file.samplerate,
+                self.audio = pyaudio.PyAudio()
+                self.stream = self.audio.open(format=pyaudio.paInt16, channels=sound_file.channels, rate=sound_file.samplerate,
                                     output=True)
                 data = sound_file.read(1024, dtype='int16')
 
+                #self.is_speaking = True
+                #while len(data) > 0 and self.is_speaking:
                 while len(data) > 0:
-                    stream.write(data.tobytes())
+                    self.stream.write(data.tobytes())
                     data = sound_file.read(1024, dtype='int16')
 
-                stream.stop_stream()
-                stream.close()
-                audio.terminate()
+                    # Check if the Enter key is pressed
+    #                 if keyboard.is_pressed('enter'):
+    #                     self.stop_speaking()
+    #
+    #             self.stream.stop_stream()
+    #             self.stream.close()
+    #             self.audio.terminate()
+    #
+    # def stop_speaking(self):
+    #     self.is_speaking = False
 
     def print_w_stream(self, message, memo):
+        start_time = time.time()
         completion = self.client.chat.completions.create(
             model='gpt-4-turbo-preview',
             messages=[
@@ -95,11 +107,18 @@ class AudioAssistant:
             max_tokens=1000,
         )
 
+        first_chunk_received = False
         sentences = []
         sentence = ''
         sentence_end_chars = {'.', '?', '!', '\n'}
 
         for chunk in completion:
+            if not first_chunk_received:
+                end_time = time.time()
+                latency = end_time - start_time
+                print(f"Time taken to receive first chunk: {latency:.3f} seconds")
+                first_chunk_received = True
+
             content = chunk.choices[0].delta.content
             if content:
                 for char in content:
@@ -110,7 +129,7 @@ class AudioAssistant:
                             sentences.append(sentence)
                             # if "YES!" in sentences[0]:
                             #     if "YES!" not in sentence:
-                                    # print(f"Queued sentence: {sentence}")
+                            # print(f"Queued sentence: {sentence}")
                             self.audio_generation_queue.put(sentence)
                         sentence = ''
         return sentences
@@ -118,22 +137,25 @@ class AudioAssistant:
     def print_w_stream_local(self, message, memo):
         start_time = time.time()
         completion = ollama.chat(
-            model='mistral',  # llama2
+            model='llama2-uncensored',  # mistral
             messages=[
-                        {"role": "system", "content": memo},
-                        {"role": "user", "content": message},
-                    ],
+                {"role": "system", "content": memo},
+                {"role": "user", "content": message},
+            ],
             stream=True,
         )
-        end_time = time.time()
-        latency = end_time - start_time
-        print(f"Time taken: {latency:.3f} seconds")
-
+        first_chunk_received = False
         sentences = []
         sentence = ''
         sentence_end_chars = {'.', '?', '!', '\n'}
 
         for chunk in completion:
+            if not first_chunk_received:
+                end_time = time.time()
+                latency = end_time - start_time
+                print(f"Time taken to receive first chunk: {latency:.3f} seconds")
+                first_chunk_received = True
+
             content = chunk['message']['content']
             if content:
                 for char in content:
@@ -144,7 +166,7 @@ class AudioAssistant:
                             sentences.append(sentence)
                             # if "YES!" in sentences[0]:
                             #     if "YES!" not in sentence:
-                                    # print(f"Queued sentence: {sentence}")
+                            # print(f"Queued sentence: {sentence}")
                             self.audio_generation_queue.put(sentence)
                             # self.engine.say(sentence)
                             # self.engine.runAndWait()
