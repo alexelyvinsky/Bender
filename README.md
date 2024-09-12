@@ -1,4 +1,4 @@
-# Audio Assistant with AWS Transcribe and OpenAI Integration
+# AI Audio Assistant
 
 ## Overview
 This project is an audio assistant that listens to microphone input, transcribes it using AWS Transcribe, and provides responses via OpenAI's GPT model. It also generates audio responses and plays them back. The assistant is capable of handling live conversations, detecting trigger words, and providing concise responses based on a provided memo or context.
