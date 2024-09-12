@@ -116,7 +116,7 @@ class AudioAssistant:
             if not first_chunk_received:
                 end_time = time.time()
                 latency = end_time - start_time
-                print(f"Time taken to receive first chunk: {latency:.3f} seconds")
+                #print(f"Time taken to receive first chunk: {latency:.3f} seconds")
                 first_chunk_received = True
 
             content = chunk.choices[0].delta.content
@@ -182,7 +182,8 @@ class AudioAssistant:
     def run(self, user_input, memo="You are an assistant."):
         # start_time = time.time()
         # out = self.print_w_stream(user_input, memo)
-        out = self.print_w_stream_local(user_input, memo)
+        # change to print_w_stream_local to use local model
+        out = self.print_w_stream(user_input, memo)
         self.cleanup_queues()
         self.audio_generation_thread.join()
         self.audio_playback_thread.join()

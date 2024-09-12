@@ -43,7 +43,8 @@ def callback():  # this is called from the background thread
     try:
         recent_things_said = everything_said_aws[-10000:]  # last 200 characters
 
-        if any(word.lower() in temp_things.lower() for word in ['lenz', 'lens']):
+        # trigger word
+        if any(word.lower() in temp_things.lower() for word in ['Bender', 'bender']):
             assistant = AudioAssistant()
 
             # Wait for the previous audio to finish playing
