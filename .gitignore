@@ -1,0 +1,5 @@
+# Ignore .env file
+.env
+
+# Ignore specific .json file (replace 'config.json' with your filename)
+spry-sensor-353919-74cb50cc75e3.json
